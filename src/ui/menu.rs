@@ -43,11 +43,7 @@ impl MenuList {
     }
 
     pub fn child_number(&self) -> Option<usize> {
-        if let Some(children) = &self.children {
-            Some(children.len())
-        } else {
-            None
-        }
+        self.children.as_ref().map(|children| children.len())
     }
 
     pub fn debug_print(&self) {
@@ -83,7 +79,7 @@ impl MenuList {
     }
 }
 
-const DEEPER_ACTIONS: [&'static str; 1] = ["Files..."];
+const DEEPER_ACTIONS: [&str; 1] = ["Files..."];
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum MenuActions {
@@ -161,7 +157,7 @@ impl MainMenu {
     }
 
     pub fn position_iterator<'a>(&'a self) -> impl Iterator<Item = &'static str> + 'a {
-        MainMenuOptionIterator::new(&self)
+        MainMenuOptionIterator::new(self)
     }
 
     pub fn title(&self) -> &'static str {
