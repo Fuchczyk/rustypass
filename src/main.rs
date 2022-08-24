@@ -1,3 +1,4 @@
+mod manager;
 mod ui;
 
 use std::{
@@ -5,9 +6,9 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use ui::user_interface;
+fn main() {
+    let (tx, rx) = std::sync::mpsc::channel();
+    ui::run_user_interface(tx).join();
 
-#[tokio::main]
-async fn main() {
-    user_interface().await.unwrap();
+    // TODO: Kill signal
 }

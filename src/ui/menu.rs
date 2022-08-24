@@ -1,6 +1,7 @@
 use super::{macros::*, UIError};
 use std::cell::Ref;
 use std::collections::LinkedList as Stack;
+use std::path::Iter;
 use std::str::FromStr;
 use std::{
     cell::RefCell,
@@ -84,6 +85,7 @@ impl MenuList {
 
 const DEEPER_ACTIONS: [&'static str; 1] = ["Files..."];
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum MenuActions {
     Tick,
     OpenDatabase,
@@ -113,6 +115,38 @@ pub struct MainMenu {
     depth: Stack<(ListState, Weak<Box<MenuList>>)>,
 }
 
+struct MainMenuOptionIterator<'a> {
+    menu: &'a MainMenu,
+    position: usize,
+}
+
+impl<'a> Iterator for MainMenuOptionIterator<'a> {
+    type Item = &'static str;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        // TODO: Check unwrap
+        match &self.menu.actual_level.upgrade().unwrap().children {
+            None => None,
+            Some(vec) => match vec.get(self.position) {
+                None => None,
+                Some(position) => {
+                    self.position += 1;
+                    Some(position.name)
+                }
+            },
+        }
+    }
+}
+
+impl<'a> MainMenuOptionIterator<'a> {
+    pub fn new(menu_ref: &'a MainMenu) -> Self {
+        Self {
+            menu: menu_ref,
+            position: 0,
+        }
+    }
+}
+
 impl MainMenu {
     pub fn new() -> Self {
         let menu_list = Rc::new(Box::new(MenuList::new()));
@@ -126,6 +160,18 @@ impl MainMenu {
         }
     }
 
+    pub fn position_iterator<'a>(&'a self) -> impl Iterator<Item = &'static str> + 'a {
+        MainMenuOptionIterator::new(&self)
+    }
+
+    pub fn title(&self) -> &'static str {
+        self.actual_level.upgrade().unwrap().name
+    }
+
+    pub fn menu_state(&mut self) -> &mut ListState {
+        &mut self.list_state
+    }
+
     pub fn next(&mut self) {
         let mut index = self.list_state.selected().unwrap_or(0);
 
@@ -133,6 +179,8 @@ impl MainMenu {
 
         if index + 1 >= children {
             index = 0;
+        } else {
+            index += 1;
         }
 
         self.list_state.select(Some(index));
