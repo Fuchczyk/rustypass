@@ -1,7 +1,7 @@
 //TODO: Check if macro can become private.
 macro_rules! menu_list {
     ($($internal:tt)*) => {{
-        let mut menu = menu_list_complex! {$($internal)*};
+        let menu = menu_list_complex! {$($internal)*};
 
         menu
     }}
@@ -23,11 +23,8 @@ macro_rules! menu_list_whole {
 
     ($name:literal) => {{
         let single_list: MenuList = MenuList::generate_final($name);
-        let mut single_vector: Children = Vec::new();
 
-        single_vector.push(Rc::new(Box::new(single_list)));
-
-        single_vector
+        vec![Rc::new(Box::new(single_list))]
     }};
 
     ($name:literal: {$($internal:tt)*}) => {{
