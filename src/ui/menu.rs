@@ -174,7 +174,13 @@ impl MainMenu {
     }
 
     pub fn shallow(&mut self) {
-        todo!();
+        if self.depth.is_empty() {
+            return;
+        }
+
+        let (state, target) = self.depth.pop_back().unwrap();
+        self.list_state = state;
+        self.actual_level = target;
     }
 
     pub fn clicked(&mut self) -> MenuActions {
@@ -201,6 +207,46 @@ mod tests {
     use super::*;
 
     #[test]
+    fn normalize_menu_names() {
+        let menu_names = [
+            "Open database",
+            "Save database",
+            "Close database",
+            "Quit application",
+            "...Go back",
+            "Files...",
+            "Menu",
+        ];
+
+        let parsed = [
+            "Open database",
+            "Save database",
+            "Close database",
+            "Quit application",
+        ];
+
+        for element in parsed {
+            assert!(menu_names.contains(&element));
+        }
+
+        fn recursive_walk(menu: &MenuList, menu_names: &[&str], parsed: &[&str]) {
+            assert!(menu_names.contains(&menu.name), "Menu name = {}", menu.name);
+
+            if parsed.contains(&menu.name) {
+                assert!(menu.name.parse::<MenuActions>().is_ok());
+            }
+
+            if let Some(children) = &menu.children {
+                for child in children {
+                    recursive_walk(child, menu_names, parsed);
+                }
+            }
+        }
+
+        recursive_walk(&MenuList::new(), &menu_names, &parsed);
+    }
+
+    #[test]
     fn menu_matches_menu_actions() {
         let main_menu = MenuList::new();
 
@@ -213,6 +259,38 @@ mod tests {
                     parsing_result.is_ok(),
                     "Unable to parse menu name = {}",
                     menu.name
+                );
+            }
+
+            if let Some(children) = &menu.children {
+                for child in children {
+                    recursive_walk(child);
+                }
+            }
+        }
+
+        recursive_walk(&main_menu);
+    }
+
+    #[test]
+    fn menu_final_empty_children() {
+        let main_menu = MenuList::new();
+
+        fn recursive_walk(menu: &MenuList) {
+            if menu.name != "Menu" {
+                let test = (menu.name.parse::<MenuActions>().is_ok() && menu.is_final())
+                    || (menu.name.parse::<MenuActions>().is_err() && !menu.is_final())
+                    || menu.name.starts_with("...")
+                    || menu.name.ends_with("...");
+
+                assert!(
+                    test,
+                    "Option {} cannot pass test. TEST1a={}, TEST1b={}, TEST2a={}, TEST2b={}",
+                    menu.name,
+                    menu.name.parse::<MenuActions>().is_ok(),
+                    menu.is_final(),
+                    menu.name.parse::<MenuActions>().is_err(),
+                    !menu.is_final()
                 );
             }
 
