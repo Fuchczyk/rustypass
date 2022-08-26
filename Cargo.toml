@@ -8,3 +8,17 @@ edition = "2021"
 [dependencies]
 tui = "0.19.0"
 crossterm = "0.25"
+
+# Cryprography
+digest = "0.10.3"
+
+## Hashing
+sha2 = "0.10.2"
+sha3 = "0.10.2"
+whirlpool = "0.10.1"
+
+## Key-derivation
+argon2 = "0.4.1"
+
+# Macro utilites
+paste = "1.0.8"
