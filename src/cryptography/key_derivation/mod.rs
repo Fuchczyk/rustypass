@@ -1,5 +1,7 @@
 mod argon;
 
+use serde::{Deserialize, Serialize};
+
 pub enum KeyDerivationError {
     HashingError { description: String },
     InvalidOptions { description: String },
@@ -36,6 +38,7 @@ trait PasswordHasher {
 
 macro_rules! key_derivation_algorithms {
     ($($name:ident),*) => {
+        #[derive(Serialize, Deserialize)]
         pub enum KeyDerivationAlgorithm {
             $(
                 $name,

@@ -1,16 +1,20 @@
+mod cli;
+mod configuration;
 mod cryptography;
+mod language;
 mod manager;
 mod storage;
 mod ui;
 
-use std::{
-    cell::{Ref, RefCell},
-    sync::{Arc, Mutex},
-};
+pub use language::TRANSLATION;
 
-fn main() {
+fn main() -> Result<(), String> {
+    let config = configuration::ProgramConfiguration::load().map_err(|e| format!("{e:?}"))?;
+    language::load_translation(&config);
+
     let (tx, rx) = std::sync::mpsc::channel();
     ui::run_user_interface(tx).join();
 
     // TODO: Kill signal
+    Ok(())
 }

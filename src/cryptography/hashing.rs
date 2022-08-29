@@ -1,4 +1,5 @@
 use digest::{FixedOutputReset, Update};
+use serde::{Deserialize, Serialize};
 use sha2::{Sha256, Sha512};
 
 trait HashGeneratorCore {
@@ -30,6 +31,7 @@ impl<T: Update + FixedOutputReset + Default> HashGeneratorCore for T {
 /// by user to select wanted hashing algorithm.
 macro_rules! hash_algorithms {
     ($($name:ident),*) => {
+        #[derive(Serialize, Deserialize)]
         pub enum HashAlgorithm {
            $(
                 $name,

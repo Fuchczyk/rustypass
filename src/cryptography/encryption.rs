@@ -1,6 +1,7 @@
 use aead::{Aead, AeadCore, KeyInit};
 use generic_array::{ArrayLength, GenericArray};
 use rand::RngCore;
+use serde::{Deserialize, Serialize};
 
 pub enum EncryptionError {
     InvalidKeyLength { provided: usize, required: usize },
@@ -78,6 +79,7 @@ macro_rules! encryption_algorithms {
     ($($name:ident),*) => {
         type EncryptionNonce = Vec<u8>;
 
+        #[derive(Serialize, Deserialize)]
         pub enum EncryptionAlgorithm {
             $(
                 $name,
