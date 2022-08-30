@@ -31,7 +31,7 @@ impl<T: Update + FixedOutputReset + Default> HashGeneratorCore for T {
 /// by user to select wanted hashing algorithm.
 macro_rules! hash_algorithms {
     ($($name:ident),*) => {
-        #[derive(Serialize, Deserialize)]
+        #[derive(Serialize, Deserialize, Clone)]
         pub enum HashAlgorithm {
            $(
                 $name,
@@ -50,17 +50,18 @@ macro_rules! hash_algorithms {
 
         pub struct HashStruct {
             hash_machine: Box<dyn HashGeneratorCore>,
+            algorithm: HashAlgorithm
         }
 
         impl HashStruct {
             pub fn new(algorithm: HashAlgorithm) -> Self {
-                let hash_machine: Box<dyn HashGeneratorCore> = match algorithm {
+                let hash_machine: Box<dyn HashGeneratorCore> = match algorithm.clone() {
                     $(
                         $name => Box::new($name::new()),
                     )*
                 };
 
-                Self { hash_machine }
+                Self { hash_machine, algorithm: algorithm }
             }
 
             pub fn update(&mut self, data: &[u8]) {
@@ -69,6 +70,10 @@ macro_rules! hash_algorithms {
 
             pub fn finalize(&mut self) -> Vec<u8> {
                 self.hash_machine.finalize()
+            }
+
+            pub fn algorithm(&self) -> HashAlgorithm {
+                self.algorithm.clone()
             }
         }
     };

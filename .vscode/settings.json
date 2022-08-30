@@ -1,8 +1,10 @@
 {
     "cSpell.words": [
         "crossterm",
-        "rustypass",
+        "encryptor",
         "linkme",
-        "rngs"
+        "rngs",
+        "rustypass",
+        "zeroize"
     ]
 }

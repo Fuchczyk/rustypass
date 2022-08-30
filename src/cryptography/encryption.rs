@@ -79,7 +79,7 @@ macro_rules! encryption_algorithms {
     ($($name:ident),*) => {
         type EncryptionNonce = Vec<u8>;
 
-        #[derive(Serialize, Deserialize)]
+        #[derive(Serialize, Deserialize, Clone)]
         pub enum EncryptionAlgorithm {
             $(
                 $name,
@@ -97,7 +97,8 @@ macro_rules! encryption_algorithms {
         }
 
         pub struct EncryptionStruct {
-            encryption_machine: Box<dyn DynEncryptionCore>
+            encryption_machine: Box<dyn DynEncryptionCore>,
+            algorithm: EncryptionAlgorithm
         }
 
         impl EncryptionStruct {
@@ -112,7 +113,7 @@ macro_rules! encryption_algorithms {
                     )*
                 };
 
-                Ok(Self { encryption_machine })
+                Ok(Self { encryption_machine, algorithm })
             }
 
             pub fn encrypt<T: AsRef<[u8]>>(
@@ -123,6 +124,9 @@ macro_rules! encryption_algorithms {
                 let encrypted_data = self.encryption_machine.encrypt(&nonce, plain_data.as_ref());
 
                 (encrypted_data, nonce)
+            }
+            pub fn algorithm(&self) -> EncryptionAlgorithm {
+                self.algorithm.clone()
             }
 
             pub fn decrypt<T, N>(

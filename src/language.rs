@@ -1,24 +1,50 @@
 // TODO: Check if thread safe implementation can be used.
+use crate::configuration::ProgramConfiguration;
 use linkme::distributed_slice;
 use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::path::PathBuf;
 use std::sync::RwLock;
 
-use crate::configuration::ProgramConfiguration;
-
+/// Contains program's translation (map of strings). Should be initialized by [`load_translation`]
+/// function after initializing program's configuration (see documentation of [`configuration module`]).
+/// Change in translation configuration has effect only after program restart.
+///
+/// [`load_translation`]: crate::language::load_translation
+/// [`configuration module`]: crate::configuration
 pub const TRANSLATION: OnceCell<Translation> = OnceCell::new();
+
+/// Static variable containing all keys which should be available in [`TRANSLATION`].
+/// It is generated at the time of compilation by using [`get_translation!`] macro.
+///
+/// # Examples
+/// ```
+/// let translation = get_translation!("TEST_FEATURE");
+/// assert!(REQUIRED_FIELDS.contains("TEST_FEATURE"));
+/// ```
+///
+/// [`TRANSLATION`]: crate::language::TRANSLATION
+/// [`get_translation!`]: crate::language::get_translation
 #[distributed_slice]
 pub static REQUIRED_FIELDS: [&'static str] = [..];
 
+/// Represent all languages available in program.
 #[derive(Serialize, Deserialize)]
 pub enum Language {
+    /// Polish language
     Polish,
+    /// United States English
     USEnglish,
 }
 
 impl Language {
+    /// Returns IETF language tag representation (used for filenames of language files).
+    ///
+    /// # Examples
+    /// ```
+    /// let language = Language::Polish;
+    /// assert_eq!("pl-PL", language.language_tag());
+    /// ```
     pub fn language_tag(&self) -> &'static str {
         match self {
             Self::Polish => "pl-PL",
@@ -33,6 +59,22 @@ impl Default for Language {
     }
 }
 
+/// Macro should be used to retrieve sentence from program's translation.
+/// Programmer should initialize program's dictionary in [`TRANSLATION`]
+/// by running [`load_translation`] function before first usage of this macro.
+///
+/// # Examples
+/// ```
+/// // We are going to retrieve string,
+/// // which should be displayed if user's password was wrong.
+///
+/// let pop_up_string: &'static str = get_translation!("USER_WRONG_PASSWORD");
+/// // Example translation
+/// assert_eq!(pop_up_string, "Invalid password");
+/// ```
+///
+/// [`TRANSLATION`]: crate::language::TRANSLATION
+/// [`get_translation!`]: crate::language::get_translation
 #[macro_export]
 macro_rules! get_translation {
     ($name:expr) => {{
@@ -49,7 +91,10 @@ macro_rules! get_translation {
     }};
 }
 
-// Translation lives through all of the program life so it can be leaked by Box::leak()
+/// Structure represents program's translation and is basically wrapper
+/// around [`HashMap`] containing strings.
+///
+/// [`HashMap`]: std::collections::HashMap
 pub struct Translation(HashMap<String, &'static str>);
 impl From<HashMap<String, &'static str>> for Translation {
     fn from(map: HashMap<String, &'static str>) -> Self {
@@ -57,6 +102,12 @@ impl From<HashMap<String, &'static str>> for Translation {
     }
 }
 
+/// Loads program's translation into [`TRANSLATION`] variable.
+/// Can be used only once thanks to [`OnceCell`] implementation.
+///
+/// # Arguments
+///
+/// * `conf` - A lock reference providing non-mutable access to program's configuration.
 pub fn load_translation(conf: &RwLock<ProgramConfiguration>) -> Translation {
     let conf = conf.read().unwrap();
 
@@ -69,6 +120,15 @@ pub fn load_translation(conf: &RwLock<ProgramConfiguration>) -> Translation {
     }
 }
 
+/// Leaks values of map so they become static strings. It significantly makes usage of
+/// all language functions easier. Leaking process does not reflect on program's memory
+/// usage because [`TRANSLATION`] is initialized only once, so resulting HashMap
+/// is alive during entire execution of program.
+///
+/// # Arguments
+///
+/// * `map` - A Map with String values, which will be used to initialize [`TRANSLATION`]. Using
+///     this function with other maps will likely result in memory leak.
 fn leak_map(map: HashMap<String, String>) -> HashMap<String, &'static str> {
     let mut new_map = HashMap::new();
 
