@@ -4,7 +4,7 @@ mod cli;
 mod configuration;
 mod cryptography;
 mod language;
-mod manager;
+mod communication;
 mod storage;
 mod ui;
 
